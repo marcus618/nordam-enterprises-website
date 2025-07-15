@@ -1,0 +1,31 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import ContentCard from '../components/ContentCard.astro';
+
+// Fetch all entries from the 'services' collection
+const allServices = await getCollection('products');
+
+const contactEmail = "nordam@africa-online.net";
+const emailSubject = "Service Quote Request";
+---
+<Layout title="Services | Nordam Enterprises">
+  <div class="container mx-auto px-6 py-8">
+    <h1 class="text-3xl font-bold mb-8">SERVICES</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {allServices.map(async (service) => {
+        const { Content } = await service.render();
+        return (
+          <ContentCard 
+            title={service.data.title} 
+            image={service.data.image}
+            contactHref={`mailto:${contactEmail}?subject=${encodeURIComponent(emailSubject)}`}
+          >
+            <Content />
+          </ContentCard>
+        )
+      })}
+    </div>
+  </div>
+</Layout>

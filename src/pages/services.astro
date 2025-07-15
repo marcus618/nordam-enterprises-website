@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import ContentCard from '../components/ContentCard.astro';
+
+// 1. Fetch all entries from the 'services' collection
+const allServices = await getCollection('services');
+
+// 2. Sort them by the 'sortOrder' field we added
+const sortedServices = allServices.sort((a, b) => a.data.sortOrder - b.data.sortOrder);
+
+const contactEmail = "nordam@ewimax.mw";
+const emailSubject = "Service Quote Request";
+---
+<Layout title="Services | Nordam Enterprises">
+  <div class="container mx-auto px-4 py-12">
+    <h1 class="text-4xl font-bold mb-8 text-center md:text-left">SERVICES</h1>
+
+    <!-- 3. Create a grid and loop through the sorted items -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {sortedServices.map(async (service) => {
+        // This renders the markdown body to HTML
+        const { Content } = await service.render();
+        return (
+          <ContentCard 
+            title={service.data.title} 
+            image={service.data.image}
+            contactHref={`mailto:${contactEmail}?subject=${encodeURIComponent(emailSubject)} - ${service.data.title}`}
+          >
+            <!-- The rendered description goes here -->
+            <Content />
+          </ContentCard>
+        )
+      })}
+    </div>
+  </div>
+</Layout>

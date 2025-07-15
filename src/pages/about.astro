@@ -1,0 +1,76 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="About Us | Nordam Enterprises">
+  <!-- Use a main container with vertical padding -->
+  <div class="container mx-auto px-4 py-16 md:py-24">
+
+    <!-- ===== SECTION 1: ABOUT US + TEAM PHOTO ===== -->
+    <!-- flex-col for mobile, md:flex-row for desktop. items-center to vertically align -->
+    <div class="flex flex-col md:flex-row items-center gap-12 md:gap-16">
+      
+      <!-- Left Column: Text -->
+      <div class="md:w-1/2 text-center md:text-left">
+        <h1 class="text-4xl md:text-5xl font-bold mb-6">ABOUT US</h1>
+        <div class="prose lg:prose-xl max-w-none text-gray-700 space-y-6">
+          <p>Nordam Enterprises is a well-established family-owned business that has been operating in Malawi since 1993. We have approximately twenty-four employees including fully-qualified environmental engineers, mechanical engineers, electricians, mechanics, and drivers, all of whom have many years of experience.</p>
+        <p>We strive to provide exceptional, personalized, high-quality customer service and we like to build long-term relationships with our customers. Our goal is to expand within the power sector and build a distinguished reputation by providing quality products and excellent service.</p>
+        <p>We are currently providing power solutions to a variety of customers within Lilongwe including the United States Embassy, German Embassy, Norwegian Embassy, British High Commission, European Union, Banks, UNDP, GIZ, NEWL, FES, and several Schools, Hospitals and Clinics.</p>
+        </div>
+      </div>
+
+      <!-- Right Column: Image -->
+      <div class="md:w-1/2">
+        <img src="/images/team-photo.jpg" alt="The Nordam Enterprises Team" class="w-full rounded-lg shadow-xl" />
+      </div>
+    </div>
+
+    <!-- ===== SECTION 2: MAP + FIND US ===== -->
+    <!-- mt-24 for lots of space between sections. flex-col-reverse to show text first on mobile -->
+    <div class="flex flex-col-reverse md:flex-row items-center gap-12 md:gap-16 mt-24 md:mt-32">
+
+      <!-- Left Column: Map -->
+      <div class="md:w-1/2 w-full">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4560.520095598337!2d33.781550691092505!3d-13.910957300097058!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1921d4dab4f0d075%3A0x13eb5fa6222459de!2sNordam%20Enterprises!5e0!3m2!1sen!2smw!4v1752163603276!5m2!1sen!2smw" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+      </div>
+
+      <!-- Right Column: Text -->
+      <div class="md:w-1/2 text-center md:text-left">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6">FIND US</h2>
+        <div class="prose lg:prose-xl max-w-none text-gray-700">
+          <p>
+            Area 28, Plot 130, Lilongwe<br/>
+            P.O. Box 879
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== SECTION 3: FOLLOW US ===== -->
+    <div class="flex flex-col md:flex-row items-center gap-12 md:gap-16 mt-24 md:mt-32">
+      
+      <!-- Left Column: Text -->
+      <div class="md:w-1/2 text-center md:text-left">
+  ^   <h2 class="text-4xl md:text-5xl font-bold mb-6">FOLLOW US</h2>
+      <div class="prose lg:prose-xl max-w-none text-gray-700">
+        <p class="mb-6">Stay up to date with our latest news, projects, and offers by following us on social media.</p>
+        <a href="https://web.facebook.com/NordamEnt" class="btn btn-outline text-primary border-primary hover:bg-primary hover:text-white">Find us on Facebook</a>
+      </div>
+    </div>
+
+      <!-- Right Column: Illustration -->
+      <div class="md:w-1/2">
+        <img src="/images/social-illustration.png" alt="Illustration of social media" class="w-full rounded-lg shadow-xl" />
+      </div>
+    </div>
+
+  </div>
+
+  </div>
+</Layout>
+
+
+
+

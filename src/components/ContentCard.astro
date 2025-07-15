@@ -1,0 +1,39 @@
+---
+interface Props {
+  title: string;
+  image: string;
+  contactHref: string;
+}
+const { title, image, contactHref } = Astro.props;
+---
+<!-- 
+  We add `flex` and `flex-col` to the main card div.
+  This ensures the card's children (the image and the card body)
+  are structured in a robust, flexible column.
+-->
+<div class="card bg-base-100 shadow-xl flex flex-col">
+  <figure><img src={image} alt={title} class="w-full h-56 object-cover" /></figure>
+  
+  <!-- 
+    We also make the card-body a flex column. This is crucial
+    for controlling the alignment of the title, description, and button.
+  -->
+  <div class="card-body flex flex-col">
+    <h2 class="card-title">{title}</h2>
+    
+    <!-- 
+      THIS IS THE MAGIC: We add `flex-grow`.
+      This tells the description's container to expand and take up
+      all available empty vertical space, pushing the button to the bottom.
+    -->
+    <div class="text-base-content/80 text-sm flex-grow">
+      <slot /> <!-- Markdown content -->
+    </div>
+
+    <div class="card-actions justify-start pt-4"> <!-- Added pt-4 for spacing -->
+      <a href={contactHref} class="btn btn-neutral w-full">
+        Contact us and Request a Quote
+      </a>
+    </div>
+  </div>
+</div>

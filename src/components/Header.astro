@@ -1,0 +1,31 @@
+---
+const navItems = [
+  { href: "/", label: "Home" },
+  { href: "/products", label: "Products" },
+  { href: "/services", label: "Services" },
+  { href: "/about", label: "About" },
+];
+---
+<div class="w-full navbar bg-base-100 shadow-md sticky top-0 z-40">
+  <div class="flex-1">
+    <a href="/" class="pl-2 flex items-center">
+      <img src="/images/logo.jpg" alt="Nordam Enterprises Logo" class="h-16" />
+    </a>
+  </div>
+  <!-- Desktop Menu (no changes here) -->
+  <div class="flex-none hidden lg:block">
+    <ul class="menu menu-horizontal">
+      {navItems.map(item => (
+        <li><a href={item.href} class="font-medium">{item.label.toUpperCase()}</a></li>
+      ))}
+    </ul>
+  </div>
+
+  <!-- ===== NEW MOBILE MENU BUTTON ===== -->
+  <div class="flex-none lg:hidden">
+    <!-- This button uses a simple onclick to show our modal -->
+    <button class="btn btn-square btn-ghost" onclick="mobile_menu_modal.showModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+  </div>
+</div>

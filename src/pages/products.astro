@@ -1,0 +1,35 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import ContentCard from '../components/ContentCard.astro';
+
+// 1. Fetch all entries from the 'products' collection
+const allProducts = await getCollection('products');
+
+// 2. Sort them by the 'sortOrder' field we added
+const sortedProducts = allProducts.sort((a, b) => a.data.sortOrder - b.data.sortOrder);
+
+const contactEmail = "nordam@ewimax.mw";
+const emailSubject = "Product Quote Request";
+---
+<Layout title="Products | Nordam Enterprises">
+  <div class="container mx-auto px-4 py-12">
+    <h1 class="text-4xl font-bold mb-8 text-center md:text-left">PRODUCTS</h1>
+
+    <!-- 3. Create a grid and loop through the sorted items -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {sortedProducts.map(async (product) => {
+        const { Content } = await product.render();
+        return (
+          <ContentCard 
+            title={product.data.title} 
+            image={product.data.image}
+            contactHref={`mailto:${contactEmail}?subject=${encodeURIComponent(emailSubject)} - ${product.data.title}`}
+          >
+            <Content />
+          </ContentCard>
+        )
+      })}
+    </div>
+  </div>
+</Layout>
