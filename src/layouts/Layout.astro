@@ -24,7 +24,6 @@ const navItems = [
 		<title>{title}</title>
 	</head>
 	<body>
-    <!-- The main content area is now much simpler -->
     <div class="flex flex-col min-h-screen">
       <Header />
       <main class="flex-grow">
@@ -33,17 +32,13 @@ const navItems = [
       <Footer />
     </div>
 
-    <!-- ===== STEP 2: ADD THE NEW MODAL HERE ===== -->
     <dialog id="mobile_menu_modal" class="modal">
-      <!-- These classes make the modal full-screen -->
       <div class="modal-box w-screen h-screen max-w-full max-h-full rounded-none flex flex-col justify-center items-center">
         
-        <!-- Close button in the corner -->
         <form method="dialog">
           <button class="btn btn-sm btn-circle btn-ghost absolute top-4 right-4 text-2xl">✕</button>
         </form>
         
-        <!-- The navigation links, centered -->
         <ul class="menu menu-lg">
           {navItems.map(item => (
             <li><a href={item.href} class="text-2xl py-4">{item.label.toUpperCase()}</a></li>
@@ -51,7 +46,6 @@ const navItems = [
         </ul>
 
       </div>
-       <!-- This invisible backdrop also closes the modal when clicked -->
       <form method="dialog" class="modal-backdrop">
         <button>close</button>
       </form>
