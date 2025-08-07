@@ -25,6 +25,16 @@ const navItems = [
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/images/lightning-1262-svgrepo-com.svg" />
 		<title>{title}</title>
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Nordam Enterprises",
+      "url": Astro.site,
+      "logo": new URL('/images/logo.jpg', Astro.site),
+      "description": "Your trusted partner for innovative and reliable power solutions in Malawi. We provide high-performance diesel generators, advanced solar systems, and expert support."
+    })} />
+
 	</head>
 	<body>
     <div class="flex flex-col min-h-screen">
