@@ -1,7 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+const pageDescription = "Your trusted partner for innovative and reliable power solutions in Malawi. We provide high-performance diesel generators, advanced solar systems, and expert support.";
+
 ---
-<Layout title="Nordam Enterprises | Home">
+<Layout title="Nordam Enterprises | Home" description={pageDescription}>
   <div class="hero min-h-[calc(100vh-80px)]" style="background-image: url(/images/hero-background2.jpg);">
     <div class="hero-overlay bg-gradient-to-r from-blue-900/80 to-transparent"></div>
     <div class="hero-content text-left text-neutral-content w-full justify-start container mx-auto px-4">

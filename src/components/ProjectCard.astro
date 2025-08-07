@@ -1,0 +1,40 @@
+---
+interface Props {
+  title: string;
+  images: string[];
+}
+const { title, images } = Astro.props;
+const uniqueId = `carousel-${Math.random().toString(36).substr(2, 9)}`;
+---
+<div class="card bg-base-100 shadow-xl flex flex-col">
+  <div id={uniqueId} class="carousel w-full rounded-t-box h-80 scroll-smooth">
+    {images.map((image, index) => (
+      <div id={`${uniqueId}-slide${index}`} class="carousel-item relative w-full">
+        <img src={image} alt={`${title} - image ${index + 1}`} class="w-full object-cover" />
+        <div class="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2">
+          <a href={`#${uniqueId}-slide${(index - 1 + images.length) % images.length}`} class="btn btn-circle btn-sm">❮</a> 
+          <a href={`#${uniqueId}-slide${(index + 1) % images.length}`} class="btn btn-circle btn-sm">❯</a>
+        </div>
+      </div> 
+    ))}
+  </div>
+  <div class="card-body flex flex-col">
+    <h2 class="card-title">{title}</h2>
+    <div class="text-base-content/80 text-sm flex-grow">
+      <slot />
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.carousel a').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('href');
+      const targetElement = document.querySelector(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      }
+    });
+  });
+</script>

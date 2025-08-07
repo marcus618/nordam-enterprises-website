@@ -4,13 +4,16 @@ import Footer from '../components/Footer.astro';
 
 interface Props {
 	title: string;
+  description?: string;
+
 }
-const { title } = Astro.props;
+const { title, description = "Nordam Enterprises specializes in robust and reliable power solutions in Malawi, including diesel generators, solar power systems, and 24/7 on-site support." } = Astro.props;
 
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/products", label: "Products" },
   { href: "/services", label: "Services" },
+  { href: "/projects", label: "Projects" },
   { href: "/about", label: "About" },
 ];
 ---
@@ -18,7 +21,7 @@ const navItems = [
 <html lang="en" data-theme="light">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="description" content="Nordam Enterprises..." />
+        <meta name="description" content={description} />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/images/lightning-1262-svgrepo-com.svg" />
 		<title>{title}</title>

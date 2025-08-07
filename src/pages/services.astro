@@ -9,8 +9,11 @@ const sortedServices = allServices.sort((a, b) => a.data.sortOrder - b.data.sort
 
 const contactEmail = "nordam@ewimax.mw";
 const emailSubject = "Service Quote Request";
+
+const pageDescription = "Discover our comprehensive services, including generator and solar system maintenance, 24/7 on-site support, product installation, plant hire, and vehicle repair.";
+
 ---
-<Layout title="Services | Nordam Enterprises">
+<Layout title="Services | Nordam Enterprises" description={pageDescription}>
   <div class="container mx-auto px-4 py-12">
     <h1 class="text-4xl font-bold mb-8 text-center md:text-left">SERVICES</h1>
 
