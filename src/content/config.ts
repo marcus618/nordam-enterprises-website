@@ -25,7 +25,7 @@ const projectsCollection = defineCollection({
   schema: z.object({
     title: z.string(),
     images: z.array(z.string()), // An array of image paths
-    sortOrder: z.number(),
+    sortOrder: z.number().default(10),
   }),
 });
 
