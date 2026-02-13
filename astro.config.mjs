@@ -15,12 +15,8 @@ export default defineConfig({
     markdoc(),
   ],
 
-  output: 'server',
-  
   adapter: vercel({
     webAnalytics: { enabled: true },
     imageService: true,
-    includeFiles: ['dist/**/*'] 
-
   })
 });
