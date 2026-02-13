@@ -26,7 +26,8 @@ const DEFAULT_HASH_PROPS = [
   "format",
   "quality",
   "fit",
-  "position"
+  "position",
+  "background"
 ];
 
 export { DEFAULT_OUTPUT_FORMAT as D, VALID_INPUT_FORMATS as V, VALID_SUPPORTED_FORMATS as a, DEFAULT_HASH_PROPS as b };

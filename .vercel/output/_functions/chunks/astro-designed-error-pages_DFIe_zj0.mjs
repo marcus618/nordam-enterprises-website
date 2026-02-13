@@ -1,4 +1,4 @@
-import { N as NOOP_MIDDLEWARE_HEADER, R as REDIRECT_STATUS_CODES, A as AstroError, h as ActionsReturnedInvalidDataError, D as DEFAULT_404_COMPONENT } from './astro/server_DpVbXP8n.mjs';
+import { a9 as NOOP_MIDDLEWARE_HEADER, aa as REDIRECT_STATUS_CODES, A as AstroError, ab as ActionsReturnedInvalidDataError, D as DEFAULT_404_COMPONENT } from './astro/server_DR-k2Sf3.mjs';
 import { parse, stringify } from 'devalue';
 import { escape } from 'html-escaper';
 
@@ -214,7 +214,7 @@ function deserializeActionResult(res) {
     error: void 0
   };
 }
-const actionResultErrorStack = /* @__PURE__ */ function actionResultErrorStackFn() {
+const actionResultErrorStack = /* @__PURE__ */ (function actionResultErrorStackFn() {
   let errorStack;
   return {
     set(stack) {
@@ -224,7 +224,7 @@ const actionResultErrorStack = /* @__PURE__ */ function actionResultErrorStackFn
       return errorStack;
     }
   };
-}();
+})();
 
 function template({
   title,
@@ -329,7 +329,7 @@ const DEFAULT_404_ROUTE = {
   component: DEFAULT_404_COMPONENT,
   generate: () => "",
   params: [],
-  pattern: /\/404/,
+  pattern: /^\/404\/?$/,
   prerender: false,
   pathname: "/404",
   segments: [[{ content: "404", dynamic: false, spread: false }]],

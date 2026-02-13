@@ -1,6 +1,6 @@
 /* empty css                                                   */
-import { c as createComponent, r as renderComponent, a as renderTemplate } from '../../chunks/astro/server_DpVbXP8n.mjs';
-import 'kleur/colors';
+import { c as createComponent, r as renderComponent, a as renderTemplate } from '../../chunks/astro/server_DR-k2Sf3.mjs';
+import 'piccolore';
 export { renderers } from '../../renderers.mjs';
 
 const prerender = false;
