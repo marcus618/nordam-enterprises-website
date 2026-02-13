@@ -3,7 +3,7 @@ import tailwind from "@astrojs/tailwind";
 import react from "@astrojs/react";
 import keystatic from "@keystatic/astro";
 import markdoc from "@astrojs/markdoc";
-import node from "@astrojs/node";
+import vercel from "@astrojs/vercel/serverless";
 
 export default defineConfig({
   site: 'https://www.nordamenterprises.com',
@@ -16,9 +16,9 @@ export default defineConfig({
   ],
 
   output: 'server',
-  outDir: './dist',
-
-  adapter: node({
-    mode: 'standalone',
+  
+  adapter: vercel({
+    webAnalytics: { enabled: true },
+    imageService: true,
   })
 });
