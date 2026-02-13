@@ -1,9 +1,12 @@
 import { config, fields, collection } from '@keystatic/core';
 
 export default config({
-  storage: {
-    kind: 'local',
-  },
+  storage: process.env.NODE_ENV === 'development'
+    ? { kind: 'local' }
+    : {
+        kind: 'github',
+        repo: 'marcus618/nordam-enterprises-website', 
+      },
   collections: {
     // 3. Projects Collection (matches z.array(z.string()) for images)
     projects: collection({
