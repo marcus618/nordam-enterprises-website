@@ -16,5 +16,16 @@ export default defineConfig({
   ],
   output: 'server',
   adapter: vercel({
-    webAnalytics: { enabled: true }  })
+    webAnalytics: { enabled: true }  }),
+
+  vite: {
+  define: {
+    // Force KEYSTATIC_URL in production to prevent localhost fallback
+    // This ensures the value is hardcoded into the build artifacts
+    ...(process.env.NODE_ENV === 'production' 
+      ? { 'process.env.KEYSTATIC_URL': JSON.stringify('https://www.nordamenterprises.com') } 
+      : {}
+    ),
+  }
+}
 });

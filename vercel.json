@@ -1,10 +1,2 @@
 {
-  "env": {
-    "KEYSTATIC_URL": "https://www.nordamenterprises.com"
-  },
-  "build": {
-    "env": {
-      "KEYSTATIC_URL": "https://www.nordamenterprises.com"
-    }
-  }
 }
