@@ -25,15 +25,5 @@ export default defineConfig({
   ],
   output: 'server',
   adapter: vercel({
-    webAnalytics: { enabled: true }  }),
-
-  vite: {
-    define: {
-      // If we are on Vercel, we HARDCODE the production URL into the build.
-      // We do not rely on process.env.NODE_ENV check.
-      ...(isVercel ? { 
-        'process.env.KEYSTATIC_URL': JSON.stringify('https://www.nordamenterprises.com') 
-      } : {})
-    }
-  }
+    webAnalytics: { enabled: true }  })
 });

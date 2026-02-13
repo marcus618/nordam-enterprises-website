@@ -1,7 +1,10 @@
 import { config, fields, collection } from '@keystatic/core';
 
+const isProduction = import.meta.env.PROD; 
+const SITE_URL = 'https://www.nordamenterprises.com';
+
 export default config({
-  storage: process.env.NODE_ENV === 'development'
+  storage: isProduction
     ? { kind: 'local' }
     : {
         kind: 'github',
