@@ -17,6 +17,13 @@ const isVercel = process.env.VERCEL === '1';
 export default defineConfig({
   site: 'https://www.nordamenterprises.com',
 
+  vite: {
+    define: {
+      // This forces the value into the code where Keystatic looks for it
+      'process.env.KEYSTATIC_URL': JSON.stringify(process.env.KEYSTATIC_URL),
+    },
+  },
+
   integrations: [
     tailwind(),
     react(),
