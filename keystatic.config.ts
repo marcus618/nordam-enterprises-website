@@ -4,9 +4,7 @@ const isProduction = import.meta.env.PROD;
 const SITE_URL = 'https://www.nordamenterprises.com';
 
 export default config({
-  storage: isProduction
-    ? { kind: 'local' }
-    : {
+  storage: {
         kind: 'github',
         repo: 'marcus618/nordam-enterprises-website', 
       },
