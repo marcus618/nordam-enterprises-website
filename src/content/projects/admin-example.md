@@ -1,6 +1,6 @@
 ---
 title: 'Admin example'
-images:
+images: []
 
 sortOrder: 10
 ---
