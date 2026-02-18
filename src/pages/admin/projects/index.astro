@@ -1,0 +1,96 @@
+---
+// src/pages/admin/projects/index.astro
+import { Octokit } from "octokit";
+
+// 1. Auth Check (Same as dashboard)
+const token = Astro.cookies.get("github_token")?.value;
+if (!token) return Astro.redirect("/api/auth/login");
+
+const octokit = new Octokit({ auth: token });
+const owner = import.meta.env.REPO_OWNER;
+const repo = import.meta.env.REPO_NAME;
+
+// 2. Fetch the list of files in the "projects" folder
+let files = [];
+let error = null;
+
+try {
+  const response = await octokit.rest.repos.getContent({
+    owner,
+    repo,
+    path: "src/content/projects", // <--- The path to your collection
+  });
+
+  // GitHub returns an object for a single file, or an array for a folder.
+  // We expect an array here.
+  if (Array.isArray(response.data)) {
+    files = response.data.filter((file) => file.name.endsWith(".md") || file.name.endsWith(".mdx"));
+  }
+} catch (e) {
+  // If the folder doesn't exist yet (no projects), GitHub returns a 404.
+  // We'll just show an empty list instead of crashing.
+  if (e.status !== 404) {
+    error = e.message;
+  }
+}
+---
+
+<html lang="en">
+  <head>
+    <title>Manage Projects</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 min-h-screen p-8 font-sans">
+    <div class="max-w-4xl mx-auto">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <a href="/admin" class="text-blue-600 hover:underline mb-2 block">&larr; Back to Dashboard</a>
+          <h1 class="text-3xl font-bold text-gray-900">Projects</h1>
+        </div>
+        <a href="/admin/projects/new" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+          + New Project
+        </a>
+      </div>
+
+      {error && (
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          Error loading projects: {error}
+        </div>
+      )}
+
+      <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Filename</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            {files.length === 0 ? (
+              <tr>
+                <td colspan="2" class="px-6 py-4 text-center text-gray-500">
+                  No projects found. Click "New Project" to create one.
+                </td>
+              </tr>
+            ) : (
+              files.map((file) => (
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {file.name}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <a href={`/admin/projects/edit/${file.name}`} class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</a>
+                    <button class="text-red-600 hover:text-red-900">Delete</button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
