@@ -1,0 +1,175 @@
+---
+// src/pages/admin/projects/edit/[slug].astro
+import { Octokit } from "octokit";
+import matter from "gray-matter"; // <--- Library to split YAML from Markdown
+
+// 1. Auth Check
+const token = Astro.cookies.get("github_token")?.value;
+if (!token) return Astro.redirect("/api/auth/login");
+
+const { slug } = Astro.params; // Get ".md" from URL
+const owner = import.meta.env.REPO_OWNER;
+const repo = import.meta.env.REPO_NAME;
+const path = `src/content/projects/${slug}`; // Full path to file
+
+const octokit = new Octokit({ auth: token });
+let fileContent = "";
+let sha = "";
+let frontmatter = {};
+let markdownBody = "";
+
+try {
+  // 2. Fetch the file from GitHub
+  const { data } = await octokit.rest.repos.getContent({
+    owner,
+    repo,
+    path,
+  });
+
+  // 3. Decode content (GitHub sends Base64)
+  if (!Array.isArray(data) && data.content) {
+    fileContent = Buffer.from(data.content, "base64").toString("utf-8");
+    sha = data.sha; // We need this "SHA" ID to save updates later
+
+    // 4. Parse Frontmatter vs Body
+    const parsed = matter(fileContent);
+    frontmatter = parsed.data; // { title: '...', images: [...], sortOrder: 1 }
+    markdownBody = parsed.content;
+  }
+} catch (e) {
+  return new Response("File not found", { status: 404 });
+}
+
+// Helper to join array of images back into a string for the text input
+// e.g., ['/img/a.jpg', '/img/b.jpg'] -> "/img/a.jpg, /img/b.jpg"
+const imagesString = Array.isArray(frontmatter.images) 
+  ? frontmatter.images.join(", ") 
+  : frontmatter.images || "";
+
+---
+
+<html lang="en">
+  <head>
+    <title>Edit Project: {slug}</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 min-h-screen p-8 font-sans">
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded shadow">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Edit Project</h1>
+        <a href="/admin/projects" class="text-sm text-gray-500 hover:text-gray-800">Cancel</a>
+      </div>
+
+      <form method="POST" action="/api/admin/projects/save">
+        <input type="hidden" name="filePath" value={path} />
+        <input type="hidden" name="sha" value={sha} />
+
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Title</label>
+          <input 
+            type="text" 
+            name="title" 
+            value={frontmatter.title} 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Sort Order</label>
+          <input 
+            type="number" 
+            name="sortOrder" 
+            value={frontmatter.sortOrder} 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+
+        <div class="mb-4">
+  <label class="block text-gray-700 text-sm font-bold mb-2">Images</label>
+  
+  <input 
+    type="text" 
+    name="images" 
+    id="images-input"
+    placeholder="/images/placeholder.jpg"
+    class="bg-white text-gray-900 shadow appearance-none border rounded w-full py-2 px-3 mb-2 leading-tight focus:outline-none focus:shadow-outline"
+  />
+  
+  <div class="flex items-center gap-2">
+    <input 
+      type="file" 
+      id="file-uploader" 
+      accept="image/*"
+      class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+    />
+    <span id="upload-status" class="text-sm text-gray-500"></span>
+  </div>
+</div>
+
+<script>
+  // Script to handle image upload without reloading the page
+  const fileUploader = document.getElementById('file-uploader');
+  const imagesInput = document.getElementById('images-input');
+  const status = document.getElementById('upload-status');
+
+  fileUploader.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    status.textContent = "Uploading...";
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        status.textContent = "Done!";
+        
+        // Append the new URL to the existing value
+        const currentVal = imagesInput.value;
+        if (currentVal) {
+          imagesInput.value = currentVal + ', ' + result.url;
+        } else {
+          imagesInput.value = result.url;
+        }
+      } else {
+        status.textContent = "Error: " + result.error;
+      }
+    } catch (err) {
+      status.textContent = "Upload failed";
+      console.error(err);
+    }
+  });
+</script>
+
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Description (Markdown)</label>
+          <textarea 
+            name="body" 
+            rows="10" 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-mono"
+          >{markdownBody}</textarea>
+        </div>
+
+        <div class="flex items-center justify-end">
+          <button 
+            type="submit" 
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
