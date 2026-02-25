@@ -1,8 +1,7 @@
 ---
-// src/pages/admin/projects/index.astro
 import { Octokit } from "octokit";
 
-// 1. Auth Check (Same as dashboard)
+// 1. Auth Check
 const token = Astro.cookies.get("github_token")?.value;
 if (!token) return Astro.redirect("/api/auth/login");
 
@@ -10,7 +9,7 @@ const octokit = new Octokit({ auth: token });
 const owner = import.meta.env.REPO_OWNER;
 const repo = import.meta.env.REPO_NAME;
 
-// 2. Fetch the list of files in the "projects" folder
+// 2. Fetch the list of files in the "products" folder
 let files = [];
 let error = null;
 
@@ -18,19 +17,15 @@ try {
     const response = await octokit.rest.repos.getContent({
         owner,
         repo,
-        path: "src/content/projects", // <--- The path to your collection
+        path: "src/content/products",
     });
 
-    // GitHub returns an object for a single file, or an array for a folder.
-    // We expect an array here.
     if (Array.isArray(response.data)) {
         files = response.data.filter(
             (file) => file.name.endsWith(".md") || file.name.endsWith(".mdx"),
         );
     }
 } catch (e) {
-    // If the folder doesn't exist yet (no projects), GitHub returns a 404.
-    // We'll just show an empty list instead of crashing.
     if (e.status !== 404) {
         error = e.message;
     }
@@ -39,7 +34,7 @@ try {
 
 <html lang="en">
     <head>
-        <title>Manage Projects</title>
+        <title>Manage Products</title>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width" />
         <script src="https://cdn.tailwindcss.com"></script>
@@ -53,20 +48,20 @@ try {
                         class="text-blue-600 hover:underline mb-2 block"
                         >&larr; Back to Dashboard</a
                     >
-                    <h1 class="text-3xl font-bold text-gray-900">Projects</h1>
+                    <h1 class="text-3xl font-bold text-gray-900">Products</h1>
                 </div>
                 <a
-                    href="/admin/projects/new"
+                    href="/admin/products/new"
                     class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                 >
-                    + New Project
+                    + New Product
                 </a>
             </div>
 
             {
                 error && (
                     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        Error loading projects: {error}
+                        Error loading products: {error}
                     </div>
                 )
             }
@@ -93,7 +88,7 @@ try {
                                         colspan="2"
                                         class="px-6 py-4 text-center text-gray-500"
                                     >
-                                        No projects found. Click "New Project"
+                                        No products found. Click "New Product"
                                         to create one.
                                     </td>
                                 </tr>
@@ -108,7 +103,7 @@ try {
   </td>
   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
     <div class="flex justify-end gap-4 actions-area">
-      <a href={`/admin/projects/edit/${file.name}`} class="text-indigo-600 hover:text-indigo-900">Edit</a>
+      <a href={`/admin/products/edit/${file.name}`} class="text-indigo-600 hover:text-indigo-900">Edit</a>
       
       <button 
         type="button" 
@@ -146,7 +141,7 @@ try {
       const formData = new FormData();
       formData.append('filePath', path);
       formData.append('sha', sha);
-      formData.append('collection', 'projects');
+      formData.append('collection', 'products');
 
       try {
         const response = await fetch('/api/admin/delete', {
@@ -162,7 +157,7 @@ try {
           throw new Error('Deletion failed');
         }
       } catch (err) {
-        alert("Failed to delete the project. Please try again.");
+        alert("Failed to delete the product. Please try again.");
         // Reset UI on error
         spinner.classList.add('hidden');
         actions.classList.remove('opacity-50', 'pointer-events-none');

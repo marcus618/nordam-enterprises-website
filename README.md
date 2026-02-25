@@ -2,10 +2,19 @@
 
 This is the codebase for the Nordam Enterprises website.
 
-- Built with Astro, Tailwind CSS, DaisyUI, and Keystatic.
+- Built with Astro, Tailwind CSS, DaisyUI.
 - Content is managed with Markdown files in `src/content/`.
 - To develop locally:  
   1. Run `npm install`  
   2. Run `npm run dev`
 
 Deployed on Vercel.
+
+***
+TODO
+----------------
+preview cards
+front page
+SEO
+
+***

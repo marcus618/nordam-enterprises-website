@@ -1,27 +1,24 @@
 ---
-// src/pages/admin/projects/new.astro
-// Auth Check
 const token = Astro.cookies.get("github_token")?.value;
 if (!token) return Astro.redirect("/api/auth/login");
 ---
 
 <html lang="en">
     <head>
-        <title>New Project</title>
+        <title>New Service</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+        <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-gray-50 min-h-screen p-8 font-sans">
         <div class="max-w-3xl mx-auto bg-white p-8 rounded shadow">
             <h1 class="text-2xl font-bold text-gray-800 mb-6">
-                Create New Project
+                Create New Service
             </h1>
 
-            <form
-                method="POST"
-                action="/api/admin/save"
-                id="new-project-form"
-            >
+            <form method="POST" action="/api/admin/save" id="new-service-form">
                 <input type="hidden" name="filePath" id="filePath" />
-                <input type="hidden" name="collection" value="projects" />
+                <input type="hidden" name="collection" value="services" />
 
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2"
@@ -32,14 +29,14 @@ if (!token) return Astro.redirect("/api/auth/login");
                         name="title"
                         id="title"
                         required
-                        placeholder="e.g. Solar Installation at Zomba"
+                        placeholder="e.g. Generator Maintenance"
                         class="bg-white text-gray-900 shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
                     />
                 </div>
 
                 <div class="mb-4 text-sm text-gray-500">
                     Will be saved as: <code id="filename-preview"
-                        >src/content/projects/...</code
+                        >src/content/services/...</code
                     >
                 </div>
 
@@ -57,10 +54,10 @@ if (!token) return Astro.redirect("/api/auth/login");
 
                 <div class="mb-6">
                     <label class="block text-gray-700 text-sm font-bold mb-2"
-                        >Project Images</label
+                        >Service Image</label
                     >
 
-                    <input type="hidden" name="images" id="images-input" />
+                    <input type="hidden" name="image" id="image-input" />
 
                     <div
                         class="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:bg-gray-50 transition text-center"
@@ -69,7 +66,6 @@ if (!token) return Astro.redirect("/api/auth/login");
                         <input
                             type="file"
                             id="file-uploader"
-                            multiple
                             accept="image/*"
                             class="hidden"
                         />
@@ -78,7 +74,7 @@ if (!token) return Astro.redirect("/api/auth/login");
                                 Click to upload
                             </div>
                             <p class="text-xs text-gray-500">
-                                or drag and drop images here
+                                or drag and drop an image here
                             </p>
                         </label>
                     </div>
@@ -95,40 +91,28 @@ if (!token) return Astro.redirect("/api/auth/login");
 
                 <script>
                     const fileInput = document.getElementById("file-uploader");
-                    const hiddenInput = document.getElementById("images-input");
+                    const hiddenInput = document.getElementById("image-input");
                     const previewGrid = document.getElementById("preview-grid");
                     const form = document.querySelector("form");
-
-                    // We store the actual File objects to upload later
-                    let filesToUpload = [];
-                    // We store existing URLs (for the Edit page)
-                    let existingUrls = (hiddenInput.value || "")
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean);
+                    let fileToUpload = null;
+                    let existingUrl = "";
 
                     function updateUI() {
                         previewGrid.innerHTML = "";
-
-                        // Show existing images
-                        existingUrls.forEach((url, index) => {
-                            renderThumbnail(url, () => {
-                                existingUrls.splice(index, 1);
+                        if (existingUrl) {
+                            renderThumbnail(existingUrl, () => {
+                                existingUrl = "";
+                                hiddenInput.value = "";
                                 updateUI();
                             });
-                        });
-
-                        // Show new local images
-                        filesToUpload.forEach((fileObj, index) => {
-                            const localUrl = URL.createObjectURL(fileObj);
+                        }
+                        if (fileToUpload) {
+                            const localUrl = URL.createObjectURL(fileToUpload);
                             renderThumbnail(localUrl, () => {
-                                filesToUpload.splice(index, 1);
+                                fileToUpload = null;
                                 updateUI();
                             });
-                        });
-
-                        // Update the hidden input with existing URLs (new ones aren't URLs yet)
-                        hiddenInput.value = existingUrls.join(", ");
+                        }
                     }
 
                     function renderThumbnail(url, onRemove) {
@@ -145,12 +129,11 @@ if (!token) return Astro.redirect("/api/auth/login");
 
                     fileInput.addEventListener("change", (e) => {
                         const files = Array.from(e.target.files);
-                        filesToUpload = [...filesToUpload, ...files];
+                        fileToUpload = files[0] || null;
                         updateUI();
                         fileInput.value = ""; // Reset input
                     });
 
-                    // THE MAGIC: Intercept the form submission
                     form.addEventListener("submit", async (e) => {
                         e.preventDefault();
                         const submitBtn = form.querySelector(
@@ -159,25 +142,32 @@ if (!token) return Astro.redirect("/api/auth/login");
                         submitBtn.textContent = "Uploading...";
                         submitBtn.disabled = true;
 
-                        // 1. Upload new images one by one
-                        const uploadedUrls = [];
-                        for (const file of filesToUpload) {
+                        // 1. Upload new image if present
+                        let uploadedUrl = "";
+                        if (fileToUpload) {
                             const formData = new FormData();
-                            formData.append("file", file);
+                            formData.append("file", fileToUpload);
 
                             const res = await fetch("/api/admin/upload", {
                                 method: "POST",
                                 body: formData,
                             });
                             const data = await res.json();
-                            if (data.success) uploadedUrls.push(data.url);
+                            if (data.success) uploadedUrl = data.url;
                         }
 
-                        // 2. Add new URLs to the hidden input
-                        const finalImages = [...existingUrls, ...uploadedUrls];
-                        hiddenInput.value = finalImages.join(", ");
+                        // 2. Set the hidden input
+                        hiddenInput.value = uploadedUrl || existingUrl;
 
-                        // 3. Now actually submit the form to the Save API
+                        // 3. Prevent submit if no image
+                        if (!hiddenInput.value) {
+                            alert("Please upload an image for this service.");
+                            submitBtn.textContent = "Create Service";
+                            submitBtn.disabled = false;
+                            return;
+                        }
+
+                        // 4. Now actually submit the form to the Save API
                         form.submit();
                     });
                 </script>
@@ -197,26 +187,24 @@ if (!token) return Astro.redirect("/api/auth/login");
                     type="submit"
                     class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 >
-                    Create Project
+                    Create Service
                 </button>
             </form>
         </div>
 
         <script>
-            // Simple script to auto-generate the filename from the title
+            // Auto-generate the filename from the title
             const titleInput = document.getElementById("title");
-            const fileInput = document.getElementById("filePath");
+            const fileInputPath = document.getElementById("filePath");
             const preview = document.getElementById("filename-preview");
 
             titleInput.addEventListener("input", (e) => {
-                // Convert "My New Project" -> "my-new-project"
                 const slug = e.target.value
                     .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric with dashes
-                    .replace(/(^-|-$)+/g, ""); // Remove leading/trailing dashes
-
-                const path = `src/content/projects/${slug}.md`;
-                fileInput.value = path;
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/(^-|-$)+/g, "");
+                const path = `src/content/services/${slug}.md`;
+                fileInputPath.value = path;
                 preview.textContent = path;
             });
         </script>
