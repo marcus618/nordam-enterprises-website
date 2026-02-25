@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
 
-    // 3. Redirect to the Admin Dashboard (we'll build this next)
+    // 3. Redirect to the Admin Dashboard
     return redirect("/admin");
   } catch (error) {
     console.error(error);

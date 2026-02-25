@@ -1,6 +1,8 @@
 ---
-// src/pages/admin/index.astro
 import { Octokit } from "octokit";
+
+// Define exactly who is allowed in
+const ALLOWED_USERS = ["marcus618", "NordamEnt" ]; 
 
 // 1. Check for the session cookie
 const token = Astro.cookies.get("github_token")?.value;
@@ -10,16 +12,24 @@ if (!token) {
   return Astro.redirect("/api/auth/login");
 }
 
-// 3. Initialize Octokit (GitHub SDK) with the user's token
+// 3. Initialize Octokit
 const octokit = new Octokit({ auth: token });
 
 let user;
 try {
-  // 4. Fetch the current user's profile to verify the token works
+  // 4. Fetch the current user's profile
   const { data } = await octokit.rest.users.getAuthenticated();
   user = data;
+
+  // 5. SECURE THE GATE: Check if they are on the allowlist
+  if (!ALLOWED_USERS.includes(user.login)) {
+    console.warn(`Unauthorized login attempt by: ${user.login}`);
+    // Clear their token and kick them out
+    Astro.cookies.delete("github_token", { path: "/" });
+    return Astro.redirect("/api/auth/login?error=unauthorized"); 
+  }
+
 } catch (error) {
-  // If the token is invalid (e.g., revoked), clear it and redirect
   Astro.cookies.delete("github_token", { path: "/" });
   return Astro.redirect("/api/auth/login");
 }
