@@ -15,11 +15,7 @@ if (!token) return Astro.redirect("/api/auth/login");
                 Create New Project
             </h1>
 
-            <form
-                method="POST"
-                action="/api/admin/save"
-                id="new-project-form"
-            >
+            <form method="POST" action="/api/admin/save" id="new-project-form">
                 <input type="hidden" name="filePath" id="filePath" />
                 <input type="hidden" name="collection" value="projects" />
 
@@ -150,35 +146,82 @@ if (!token) return Astro.redirect("/api/auth/login");
                         fileInput.value = ""; // Reset input
                     });
 
-                    // THE MAGIC: Intercept the form submission
-                    form.addEventListener("submit", async (e) => {
+                                        form.addEventListener("submit", async (e) => {
                         e.preventDefault();
-                        const submitBtn = form.querySelector(
-                            'button[type="submit"]',
-                        );
+                        const submitBtn = form.querySelector('button[type="submit"]');
+
                         submitBtn.textContent = "Uploading...";
                         submitBtn.disabled = true;
 
-                        // 1. Upload new images one by one
-                        const uploadedUrls = [];
-                        for (const file of filesToUpload) {
-                            const formData = new FormData();
-                            formData.append("file", file);
+                        console.log("=== STARTING PROJECT UPLOAD ===");
 
-                            const res = await fetch("/api/admin/upload", {
-                                method: "POST",
-                                body: formData,
-                            });
-                            const data = await res.json();
-                            if (data.success) uploadedUrls.push(data.url);
+                        try {
+                            // 1. Upload new images one by one
+                            const uploadedUrls = [];
+                            console.log(`Found ${filesToUpload.length} file(s) to upload.`);
+                            
+                            for (let i = 0; i < filesToUpload.length; i++) {
+                                const file = filesToUpload[i];
+                                console.log(`[File ${i + 1}/${filesToUpload.length}] Processing...`);
+                                console.log(`   Name: ${file.name}`);
+                                console.log(`   Size: ${Math.round(file.size / 1024)} KB (${file.size} bytes)`);
+                                console.log(`   Type: ${file.type}`);
+
+                                const formData = new FormData();
+                                formData.append("file", file);
+
+                                console.log(`>> Sending fetch request to /api/admin/upload...`);
+                                const res = await fetch("/api/admin/upload", {
+                                    method: "POST",
+                                    body: formData,
+                                });
+
+                                console.log(`>> Response Status: ${res.status} ${res.statusText}`);
+
+                                // Read text instead of json first to gracefully catch 500 errors / HTML limits
+                                const rawText = await res.text();
+
+                                let data;
+                                try {
+                                    data = JSON.parse(rawText);
+                                    console.log(`>> JSON parsed safely. Success flag: ${data.success}`);
+                                } catch (parseErr) {
+                                    console.error(`>> JSON Parse failed! Raw response snippet:\n`, rawText.substring(0, 300));
+                                    throw new Error("Server did not return valid JSON. See raw output above.");
+                                }
+
+                                if (data.success) {
+                                    console.log(`>> File uploaded successfully. URL: ${data.url}`);
+                                    uploadedUrls.push(data.url);
+                                } else {
+                                    console.error(`>> Server explicitly rejected upload:`, data);
+                                    throw new Error(`Server rejected upload. Check console. errored_data: ${JSON.stringify(data)}`);
+                                }
+                            }
+
+                            console.log("=== All files processed successfully! Saving project data... ===");
+
+                            // 2. Add new URLs to the hidden input
+                            const finalImages = [
+                                ...existingUrls,
+                                ...uploadedUrls,
+                            ];
+                            hiddenInput.value = finalImages.join(", ");
+
+                            // 3. submit the form to the Save API
+                            form.submit();
+                        } catch (err) {
+                            console.error("\n=== ERROR OCCURRED DURING UPLOAD ===");
+                            console.error(err);
+                            console.error("====================================\n");
+
+                            // Re-enable the button so they aren't stuck locally
+                            submitBtn.textContent = "Upload Failed (Check Console)";
+                            submitBtn.disabled = false;
+                            
+                            // Let the user know they need to check the console
+                            alert("The upload failed. Please take a screenshot of your browser's Developer Console and send it to the developer.");
                         }
-
-                        // 2. Add new URLs to the hidden input
-                        const finalImages = [...existingUrls, ...uploadedUrls];
-                        hiddenInput.value = finalImages.join(", ");
-
-                        // 3. Now actually submit the form to the Save API
-                        form.submit();
                     });
                 </script>
 
