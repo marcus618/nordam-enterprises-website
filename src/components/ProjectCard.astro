@@ -2,32 +2,25 @@
 interface Props {
   title: string;
   images: string[];
-  idPrefix?: string; // ADD THIS
 }
-const { title, images, idPrefix = "" } = Astro.props;
-// If the array is perfectly empty (like in our preview), provide a fallback structure 
-// so the carousel item actually exists for JavaScript to target it.
-const renderImages = images.length > 0 ? images : ["/placeholder.png"];
+const { title, images } = Astro.props;
 const uniqueId = `carousel-${Math.random().toString(36).substr(2, 9)}`;
 ---
 <div class="card bg-base-100 shadow-xl flex flex-col">
-  <div id={idPrefix ? `${idPrefix}-carousel` : uniqueId} class="carousel w-full rounded-t-box h-80 scroll-smooth">
-    {renderImages.map((image, index) => (
-      <div id={`${idPrefix ? `${idPrefix}-carousel` : uniqueId}-slide${index}`} class="carousel-item relative w-full">
-        <!-- ADD THE ID HERE FOR JAVASCRIPT TARGETING -->
-        <img id={idPrefix && index === 0 ? `${idPrefix}-image` : undefined} src={image} alt={`${title} - image ${index + 1}`} class="w-full object-cover" />
+  <div id={uniqueId} class="carousel w-full rounded-t-box h-80 scroll-smooth">
+    {images.map((image, index) => (
+      <div id={`${uniqueId}-slide${index}`} class="carousel-item relative w-full">
+        <img src={image} alt={`${title} - image ${index + 1}`} class="w-full object-cover" />
         <div class="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2">
-          <a href={`#${idPrefix ? `${idPrefix}-carousel` : uniqueId}-slide${(index - 1 + renderImages.length) % renderImages.length}`} class="btn btn-circle btn-sm">❮</a> 
-          <a href={`#${idPrefix ? `${idPrefix}-carousel` : uniqueId}-slide${(index + 1) % renderImages.length}`} class="btn btn-circle btn-sm">❯</a>
+          <a href={`#${uniqueId}-slide${(index - 1 + images.length) % images.length}`} class="btn btn-circle btn-sm">❮</a> 
+          <a href={`#${uniqueId}-slide${(index + 1) % images.length}`} class="btn btn-circle btn-sm">❯</a>
         </div>
       </div> 
     ))}
   </div>
   <div class="card-body flex flex-col">
-    <!-- ADD TITLE ID -->
-    <h2 id={idPrefix ? `${idPrefix}-title` : undefined} class="card-title">{title}</h2>
-    <!-- ADD BODY ID -->
-    <div id={idPrefix ? `${idPrefix}-body` : undefined} class="text-base-content/80 text-sm flex-grow whitespace-pre-wrap">
+    <h2 class="card-title">{title}</h2>
+    <div class="text-base-content/80 text-sm flex-grow">
       <slot />
     </div>
   </div>
