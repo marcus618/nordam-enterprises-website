@@ -73,8 +73,14 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
     return redirect(`/admin/${collection}`);
   } catch (error) {
+    if (error instanceof Error) {
+      return new Response(
+        `Error saving to GitHub: ${error.message}`,
+        { status: 500 }
+      );
+    }
     return new Response(
-      `Error saving to GitHub: ${error.message}`,
+      "Error saving to GitHub: Unknown error",
       { status: 500 }
     );
   }

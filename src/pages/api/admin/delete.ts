@@ -25,18 +25,29 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     });
 
     let imagesToDelete: string[] = [];
-    if (!Array.isArray(fileData) && fileData.content) {
+    if (
+      !Array.isArray(fileData) &&
+      fileData.type === "file" &&
+      "content" in fileData &&
+      fileData.content
+    ) {
       const content = Buffer.from(fileData.content, "base64").toString("utf-8");
       const { data: frontmatter } = matter(content);
 
-      // Only projects have an array of images
-      if (collection === "projects" && Array.isArray(frontmatter.images)) {
-        imagesToDelete = frontmatter.images;
+      let rawImages = [];
+
+      if (collection === "projects") {
+        if (Array.isArray(frontmatter.images)) {
+          rawImages = frontmatter.images;
+        } else if (typeof frontmatter.images === "string") {
+          rawImages = frontmatter.images.split(",");
+        }
+      } else {
+        if (typeof frontmatter.image === "string") {
+          rawImages = [frontmatter.image];
+        }
       }
-      // For services/products, image is a string (single image)
-      if ((collection === "services" || collection === "products") && typeof frontmatter.image === "string") {
-        imagesToDelete = [frontmatter.image];
-      }
+      imagesToDelete = rawImages.map(img => img.trim()).filter(Boolean);
     }
 
     // 2. Delete the Markdown file
@@ -65,12 +76,19 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         }
       } catch (e) {
         // Continue even if image is missing
-        console.error(`Could not delete image ${imageUrl}:`, e.message);
+        if (e instanceof Error) {
+          console.error(`Could not delete image ${imageUrl}:`, e.message);
+        } else {
+          console.error(`Could not delete image ${imageUrl}:`, e);
+        }
       }
     }
 
     return redirect(`/admin/${collection}`);
   } catch (error) {
-    return new Response(`Delete failed: ${error.message}`, { status: 500 });
+    if (error instanceof Error) {
+      return new Response(`Delete failed: ${error.message}`, { status: 500 });
+    }
+    return new Response("Delete failed: Unknown error", { status: 500 });
   }
 };

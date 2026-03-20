@@ -1,0 +1,308 @@
+---
+import { Octokit } from "octokit";
+import matter from "gray-matter";
+import ContentCard from "../../../../components/ContentCard.astro";
+import ProjectCard from "../../../../components/ProjectCard.astro";
+
+// 1. Auth Check
+const token = Astro.cookies.get("github_token")?.value;
+if (!token) return Astro.redirect("/api/auth/login");
+
+const { slug, collection = "" } = Astro.params;
+const isMultiImage = collection === "projects";
+const owner = import.meta.env.REPO_OWNER;
+const repo = import.meta.env.REPO_NAME;
+const path = `src/content/${collection}/${slug}`;
+
+const octokit = new Octokit({ auth: token });
+let fileContent = "";
+let sha = "";
+let frontmatter: any = {};
+let markdownBody = "";
+
+const singularMap: Record<string, string> = {
+  products: "Product",
+  projects: "Project",
+  services: "Service",
+};
+const singular = singularMap[collection] || collection.slice(0, -1);
+
+try {
+    // 2. Fetch the file from GitHub
+    const { data }: any = await octokit.rest.repos.getContent({
+        owner,
+        repo,
+        path,
+    });
+
+    // 3. Decode content (GitHub sends Base64)
+    if (!Array.isArray(data) && data.content) {
+        fileContent = Buffer.from(data.content, "base64").toString("utf-8");
+        sha = data.sha;
+
+        // 4. Parse Frontmatter vs Body
+        const parsed = matter(fileContent);
+        frontmatter = parsed.data; // { title: '...', image: '...', sortOrder: 1 }
+        markdownBody = parsed.content;
+    }
+} catch (e) {
+    return new Response("File not found on GitHub", { status: 404 });
+}
+
+let initialImages: string[] = [];
+if (isMultiImage) {
+    if (Array.isArray(frontmatter.images)) {
+        initialImages = frontmatter.images;
+    } else if (frontmatter.images) {
+        initialImages = [frontmatter.images];
+    }
+} else {
+    if (frontmatter.image) {
+        initialImages = [frontmatter.image];
+    }
+}
+
+const imagesString = initialImages.join(", ");
+// Use the first image for the live preview fallback, otherwise placeholder
+const previewFallbackImage = initialImages[0] || "/placeholder.png";
+---
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Edit {singular} - {slug}</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+    </head>
+    <body class="bg-gray-50 min-h-screen p-8 font-sans">
+        <div class="max-w-3xl mx-auto bg-white p-8 rounded shadow">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">
+                    Edit {singular}
+                </h1>
+                <a href={`/admin/${collection}`} class="text-sm text-gray-500 hover:text-gray-800">Cancel</a>
+            </div>
+
+                <form
+                    method="POST"
+                    action="/api/admin/save"
+                    id={`edit-${collection}-form`}
+                    data-collection={collection}
+                    data-is-multi={isMultiImage ? "true" : "false"}
+                >
+                    <input type="hidden" name="filePath" value={path} />
+                    <input type="hidden" name="sha" value={sha} />
+                    <input type="hidden" name="collection" value={collection} />
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Title</label>
+                        <input
+                            type="text"
+                            name="title"
+                            id="title"
+                            value={frontmatter.title || ""}
+                            class="bg-white text-gray-900 shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                            required
+                        />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Sort Order</label>
+                        <input
+                            type="number"
+                            name="sortOrder"
+                            value={frontmatter.sortOrder || 10}
+                            class="bg-white text-gray-900 shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                        />
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            {singular} Image(s)
+                        </label>
+                        
+                        {
+                            isMultiImage ? (
+                                <input type="hidden" name="images" id="image-input" value={imagesString} />
+                            ) : (
+                                <input type="hidden" name="image" id="image-input" value={imagesString} />
+                            )
+                        }
+
+                        <div
+                            class="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:bg-gray-50 transition text-center"
+                            id="drop-zone"
+                        >
+                            <input
+                                type="file"
+                                id="file-uploader"
+                                accept="image/*"
+                                class="hidden"
+                                {...(isMultiImage ? { multiple: true } : {})}
+                            />
+                            <label for="file-uploader" class="cursor-pointer">
+                                <div class="text-blue-600 font-semibold">Click to upload</div>
+                                <p class="text-xs text-gray-500">or drag and drop {isMultiImage ? "images" : "an image"} here</p>
+                            </label>
+                        </div>
+
+                        <div id="preview-grid" class="grid grid-cols-3 gap-4 mt-4"></div>
+                        <p id="upload-status" class="text-xs text-gray-500 mt-2 h-4"></p>
+                    </div>
+
+                    <script>
+                        const fileInput = document.getElementById("file-uploader") as HTMLInputElement;
+                        const hiddenInput = document.getElementById("image-input") as HTMLInputElement;
+                        const previewGrid = document.getElementById("preview-grid");
+                        const form = document.querySelector("form");
+
+                        if (!form) throw new Error("Form not found");
+                        const collectionName = form.getAttribute("data-collection");
+                        const isMulti = form.getAttribute("data-is-multi") === "true";
+
+                        let filesToUpload: File[] = []; 
+                        let existingUrls = (hiddenInput.value || "")
+                            .split(",")
+                            .map((s: string) => s.trim())
+                            .filter(Boolean);
+
+                        function updateUI() {
+                            if (!previewGrid) return;
+                            previewGrid.innerHTML = "";
+
+                            existingUrls.forEach((url: string, index: number) => {
+                                renderThumbnail(url, () => {
+                                    existingUrls.splice(index, 1);
+                                    updateUI();
+                                });
+                            });
+
+                            filesToUpload.forEach((fileObj: File, index: number) => {
+                                const localUrl = URL.createObjectURL(fileObj);
+                                renderThumbnail(localUrl, () => {
+                                    filesToUpload.splice(index, 1);
+                                    updateUI();
+                                });
+                            });
+
+                            hiddenInput.value = existingUrls.join(", ");
+
+                            if (!isMulti && (existingUrls.length > 0 || filesToUpload.length > 0)) {
+                                fileInput.disabled = true;
+                            } else {
+                                fileInput.disabled = false;
+                            }
+
+                            if (typeof window.syncPreviewImage === "function") {
+                                window.syncPreviewImage(filesToUpload, existingUrls);
+                            }
+                        }
+
+                        function renderThumbnail(url: string, onRemove: () => void) {
+                            const div = document.createElement("div");
+                            div.className = "relative group aspect-square bg-gray-100 rounded border overflow-hidden";
+                            div.innerHTML = `
+                                <img src="${url}" class="w-full h-full object-cover" />
+                                <button type="button" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow">✕</button>
+                            `;
+                            const btn = div.querySelector("button");
+                            if (btn) btn.onclick = onRemove;
+                            if (previewGrid) previewGrid.appendChild(div);
+                        }
+
+                        if (fileInput) {
+                            fileInput.addEventListener("change", (e) => {
+                                const target = e.target as HTMLInputElement;
+                                if (!target || !target.files) return;
+                                const files = Array.from(target.files);
+
+                                if (isMulti) {
+                                    filesToUpload = [...filesToUpload, ...files];
+                                } else {
+                                    filesToUpload = [files[0]];
+                                    existingUrls = [];
+                                }
+                                updateUI();
+                                fileInput.value = "";
+                            });
+                        }
+
+                        form.addEventListener("submit", async (e) => {
+                            e.preventDefault();
+                            const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+                            if (existingUrls.length === 0 && filesToUpload.length === 0) {
+                                alert(`Please upload at least one image for this ${collectionName}.`);
+                                return;
+                            }
+
+                            if (submitBtn) {
+                                submitBtn.textContent = "Uploading...";
+                                submitBtn.disabled = true;
+                            }
+
+                            try {
+                                const uploadedUrls = [];
+
+                                for (let i = 0; i < filesToUpload.length; i++) {
+                                    const formData = new FormData();
+                                    formData.append("file", filesToUpload[i]);
+
+                                    const res = await fetch("/api/admin/upload", {
+                                        method: "POST",
+                                        body: formData,
+                                    });
+
+                                    const rawText = await res.text();
+                                    const data = JSON.parse(rawText);
+
+                                    if (data.success) {
+                                        uploadedUrls.push(data.url);
+                                    } else {
+                                        throw new Error("Upload failed on server.");
+                                    }
+                                }
+
+                                const finalImages = [...existingUrls, ...uploadedUrls];
+
+                                if (isMulti) {
+                                    hiddenInput.value = finalImages.join(", ");
+                                } else {
+                                    hiddenInput.value = finalImages[0] || "";
+                                }
+
+                                form.submit();
+                            } catch (err) {
+                                console.error(err);
+                                if (submitBtn) {
+                                    submitBtn.textContent = "Save Changes";
+                                    submitBtn.disabled = false;
+                                }
+                                alert("The upload failed. Please try again.");
+                            }
+                        });
+
+                        // Call once to render initial state
+                        updateUI();
+                    </script>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                        <textarea
+                            name="body"
+                            rows="10"
+                            class="bg-white text-gray-900 shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline font-mono"
+                        >{markdownBody}</textarea>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                        Save Changes
+                    </button>
+                </form>
+            </div>
+            
+        </div>
+    </body>
+</html>

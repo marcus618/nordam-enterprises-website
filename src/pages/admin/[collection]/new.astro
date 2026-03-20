@@ -1,0 +1,331 @@
+---
+const token = Astro.cookies.get("github_token")?.value;
+if (!token) return Astro.redirect("/api/auth/login");
+
+const { collection = "" } = Astro.params;
+const isMultiImage = collection === "projects";
+
+const singularMap: Record<string, string> = {
+  products: "Product",
+  projects: "Project",
+  services: "Service",
+};
+const singular = singularMap[collection] || collection.slice(0, -1);
+---
+
+<html lang="en">
+    <head>
+        <title>
+            New {singular}
+        </title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+    </head>
+    <body class="bg-gray-50 min-h-screen p-8 font-sans">
+        <div class="max-w-3xl mx-auto bg-white p-8 rounded shadow">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6">
+                Create New {singular}
+            </h1>
+
+            <form
+                method="POST"
+                action="/api/admin/save"
+                id={`new-${collection}-form`}
+                data-collection={collection}
+                data-is-multi={isMultiImage ? "true" : "false"}
+            >
+                <input type="hidden" name="filePath" id="filePath" />
+                <input type="hidden" name="collection" value={collection} />
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2"
+                        >Title</label
+                    >
+                    <input
+                        type="text"
+                        name="title"
+                        id="title"
+                        required
+                        placeholder="e.g. Generator Maintenance"
+                        class="bg-white text-gray-900 shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                </div>
+
+                <div class="mb-4 text-sm text-gray-500">
+                    Will be saved as: <code id="filename-preview"
+                        >src/content/{collection}/...</code
+                    >
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2"
+                        >Sort Order</label
+                    >
+                    <input
+                        type="number"
+                        name="sortOrder"
+                        value="10"
+                        class="bg-white text-gray-900 shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2"
+                        >{
+                            singular
+                        } Image(s)</label
+                    >
+
+                    {
+                        isMultiImage ? (
+                            <input
+                                type="hidden"
+                                name="images"
+                                id="image-input"
+                            />
+                        ) : (
+                            <input
+                                type="hidden"
+                                name="image"
+                                id="image-input"
+                            />
+                        )
+                    }
+                    <div
+                        class="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:bg-gray-50 transition text-center"
+                        id="drop-zone"
+                    >
+                        <input
+                            type="file"
+                            id="file-uploader"
+                            accept="image/*"
+                            class="hidden"
+                            {...isMultiImage ? { multiple: true } : {}}
+                        />
+                        <label for="file-uploader" class="cursor-pointer">
+                            <div class="text-blue-600 font-semibold">
+                                Click to upload
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                or drag and drop an image here
+                            </p>
+                        </label>
+                    </div>
+
+                    <div id="preview-grid" class="grid grid-cols-3 gap-4 mt-4">
+                    </div>
+
+                    <p
+                        id="upload-status"
+                        class="text-xs text-gray-500 mt-2 h-4"
+                    >
+                    </p>
+
+                </div>
+
+                <script>
+                    const fileInput = document.getElementById("file-uploader");
+                    const hiddenInput = document.getElementById("image-input");
+                    const previewGrid = document.getElementById("preview-grid");
+                    const form = document.querySelector("form");
+
+                    // Read the variables we passed to the HTML
+                    if (!form) throw new Error("Form not found");
+                    const collectionName = form.getAttribute("data-collection");
+                    const isMulti =
+                        form.getAttribute("data-is-multi") === "true";
+
+                    // Unify state to always use an array
+                    let filesToUpload: File[] = [];
+                    function updateUI() {
+                        if (previewGrid) {
+                            previewGrid.innerHTML = "";
+                        }
+
+                        filesToUpload.forEach((fileObj, index) => {
+                            const localUrl = URL.createObjectURL(fileObj);
+                            renderThumbnail(localUrl, () => {
+                                filesToUpload.splice(index, 1);
+                                updateUI();
+                            });
+                        });
+                    }
+
+                    function renderThumbnail(
+                        url: string,
+                        onRemove: () => void,
+                    ) {
+                        const div = document.createElement("div");
+                        div.className =
+                            "relative group aspect-square bg-gray-100 rounded border overflow-hidden";
+                        div.innerHTML = `<img src="${url}" class="w-full h-full object-cover" />
+            <button type="button" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow">✕</button>
+        `;
+                        const btn = div.querySelector("button");
+                        if (btn) {
+                            btn.onclick = onRemove;
+                            if (previewGrid) {
+                                previewGrid.appendChild(div);
+                            }
+                        }
+                    }
+
+                    if (!fileInput || !hiddenInput) {
+                        throw new Error("Required input elements not found");
+                    }
+                    fileInput.addEventListener("change", (e) => {
+                        const target = e.target as HTMLInputElement | null;
+                        if (!target || !target.files) return;
+
+                        const files = Array.from(target.files);
+
+                        // Single vs Multi Logic!
+                        if (isMulti) {
+                            filesToUpload = [...filesToUpload, ...files];
+                        } else {
+                            filesToUpload = [files[0]]; // Overwrite with only the newest file
+                        }
+
+                        updateUI();
+                        (fileInput as HTMLInputElement).value = "";
+                    });
+
+                                        form.addEventListener("submit", async (e) => {
+                        e.preventDefault();
+                        console.info("--- STARTING FORM SUBMISSION ---");
+                        console.info(`Collection: ${collectionName}, IsMulti: ${isMulti}`);
+
+                        if (filesToUpload.length === 0) {
+                            console.warn("Upload aborted: No files selected.");
+                            alert(`Please upload at least one image for this ${collectionName}.`);
+                            return;
+                        }
+
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        if (submitBtn) {
+                            (submitBtn as HTMLButtonElement).textContent = "Uploading...";
+                            (submitBtn as HTMLButtonElement).disabled = true;
+                        }
+
+                        try {
+                            const uploadedUrls = [];
+                            console.info(`Starting upload loop for ${filesToUpload.length} file(s).`);
+
+                            for (let i = 0; i < filesToUpload.length; i++) {
+                                const file = filesToUpload[i];
+                                console.info(`[File ${i + 1}/${filesToUpload.length}] Preparing: '${file.name}' (${(file.size / 1024).toFixed(2)} KB)`);
+
+                                const formData = new FormData();
+                                formData.append("file", file);
+
+                                console.info(`[File ${i + 1}] Executing fetch to /api/admin/upload...`);
+                                
+                                const fetchStartTime = Date.now();
+                                const res = await fetch("/api/admin/upload", {
+                                    method: "POST",
+                                    body: formData,
+                                });
+                                const fetchDuration = Date.now() - fetchStartTime;
+
+                                console.info(`[File ${i + 1}] Fetch completed in ${fetchDuration}ms. Status: ${res.status} ${res.statusText}`);
+
+                                const rawText = await res.text();
+                                console.info(`[File ${i + 1}] Raw server response (first 100 chars): ${rawText.substring(0, 100)}`);
+
+                                let data;
+                                try {
+                                    data = JSON.parse(rawText);
+                                    console.info(`[File ${i + 1}] JSON parsed successfully. Success: ${data.success}`);
+                                } catch (jsonErr) {
+                                    console.error(`[File ${i + 1}] CRITICAL ERROR: Server did not return valid JSON. Are you hitting a hard timeout or gateway error?`);
+                                    throw new Error("Server returned an invalid non-JSON response.");
+                                }
+
+                                if (data.success) {
+                                    uploadedUrls.push(data.url);
+                                    console.info(`[File ${i + 1}] Saved to URL: ${data.url}`);
+                                } else {
+                                    throw new Error(`Upload failed on server: ${data.error || 'No error message provided'}`);
+                                }
+                            }
+
+                            console.info("--- ALL FILES UPLOADED SUCCESSFULLY ---");
+                            
+                            if (isMulti) {
+                                const multiVal = uploadedUrls.join(", ");
+                                (hiddenInput as HTMLInputElement).value = multiVal;
+                                console.info(`Set multi-image hidden field to: ${multiVal}`);
+                            } else {
+                                const singleVal = uploadedUrls[0] || "";
+                                (hiddenInput as HTMLInputElement).value = singleVal;
+                                console.info(`Set single-image hidden field to: ${singleVal}`);
+                            }
+
+                            if (!(hiddenInput as HTMLInputElement).value) {
+                                throw new Error("Missing Upload URL in hidden field.");
+                            }
+
+                            console.info("Submitting form natively to /api/admin/save...");
+                            form.submit();
+                            
+                        } catch (err: any) {
+                            console.error("--- UPLOAD PROCESS FAILED ---");
+                            console.error(`Error Message: ${err.message}`);
+                            if (err.stack) console.error(`Stack Trace:`, err.stack);
+                            
+                            if (submitBtn) {
+                                (submitBtn as HTMLButtonElement).textContent = "Upload Failed";
+                                (submitBtn as HTMLButtonElement).disabled = false;
+                            }
+                            alert("The upload failed. Please check the browser console logs and send them to the developer.");
+                        }
+                    });
+                </script>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2"
+                        >Description</label
+                    >
+                    <textarea
+                        name="body"
+                        rows="10"
+                        class="bg-white text-gray-900 shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline font-mono"
+                    ></textarea>
+                </div>
+
+                <button
+                    type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Create {
+                        singular
+                    }
+                </button>
+            </form>
+        </div>
+
+        <script>
+            // Auto-generate the filename from the title
+            const titleInput = document.getElementById("title");
+            const fileInputPath = document.getElementById("filePath");
+            const preview = document.getElementById("filename-preview");
+
+            const formElement = document.querySelector("form");
+            const activeCollection = formElement
+                ? formElement.getAttribute("data-collection")
+                : "unknown";
+
+            if (titleInput && fileInputPath && preview) {
+                titleInput.addEventListener("input", (e) => {
+                    const slug = (e.target as HTMLInputElement).value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/(^-|-$)+/g, "");
+                    const path = `src/content/${activeCollection}/${slug}.md`;
+                    (fileInputPath as HTMLInputElement).value = path;
+                    (preview as HTMLSpanElement).textContent = path;
+                });
+            }
+        </script>
+    </body>
+</html>
