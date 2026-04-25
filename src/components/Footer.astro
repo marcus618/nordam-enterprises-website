@@ -1,17 +1,29 @@
 ---
-// A clean footer using DaisyUI's footer component
+// Ultra-minimal editorial footer optimized for widescreen and mobile
 ---
-<footer class="footer footer-center p-10 bg-base-200 text-base-content rounded mt-12">
-  <nav class="grid grid-flow-col gap-4">
-        <p>Copyright © 2026 - All right reserved by Nordam Enterprises</p>
-  </nav> 
-  <nav>
-    <div class="grid grid-flow-col gap-4">
-      <a href="#"></a>
+<footer class="bg-white py-12 px-6 md:px-12 border-t border-gray-100 mt-auto">
+  <div class="max-w-[1400px] mx-auto flex flex-col xl:flex-row justify-between items-center gap-10 text-xs font-medium tracking-widest text-gray-500 uppercase">
+    
+    <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 text-center md:text-left">
+      <span class="text-black font-bold">© 2026 NORDAM ENTERPRISES</span>
+      <span class="hidden md:inline text-gray-300">|</span>
+      <span>Lilongwe, Malawi</span>
     </div>
-  </nav> 
-  <aside>
-    <p>+265 999 246 782 | nordam@ewimax.mw</p>
-    <p>+265 888 202 067 | nordam@africa-online.net</p>
-  </aside>
+
+    <div class="flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center">
+      
+      <div class="flex flex-col items-center xl:items-end gap-1">
+        <a href="mailto:nordam@africa-online.net" class="hover:text-black transition-colors">nordam@africa-online.net</a>
+        <a href="tel:+265999246782" class="hover:text-black transition-colors">+265 999 246 782</a>
+      </div>
+      
+      <span class="hidden md:block w-px h-8 bg-gray-200"></span>
+      <span class="block md:hidden w-12 h-px bg-gray-200"></span> <div class="flex flex-col items-center xl:items-start gap-1">
+        <a href="mailto:nordam@ewimax.mw" class="hover:text-black transition-colors">nordam@ewimax.mw</a>
+        <a href="tel:+265888202067" class="hover:text-black transition-colors">+265 888 202 067</a>
+      </div>
+
+    </div>
+    
+  </div>
 </footer>
