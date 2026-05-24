@@ -7,17 +7,27 @@ const { title, images } = Astro.props;
 const uniqueId = `carousel-${Math.random().toString(36).substr(2, 9)}`;
 ---
 <div class="card bg-base-100 shadow-xl flex flex-col">
-  <div id={uniqueId} class="carousel w-full rounded-t-box h-80 scroll-smooth">
-    {images.map((image, index) => (
-      <div id={`${uniqueId}-slide${index}`} class="carousel-item relative w-full">
-        <img src={image} alt={`${title} - image ${index + 1}`} class="w-full object-cover" />
-        <div class="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2">
-          <a href={`#${uniqueId}-slide${(index - 1 + images.length) % images.length}`} class="btn btn-circle btn-sm">❮</a> 
-          <a href={`#${uniqueId}-slide${(index + 1) % images.length}`} class="btn btn-circle btn-sm">❯</a>
-        </div>
-      </div> 
-    ))}
+  <!-- Wrap the carousel and buttons in a relative positioning div -->
+  <div class="relative w-full rounded-t-box overflow-hidden h-80">
+    
+    <!-- The carousel container without the buttons inside -->
+    <div id={uniqueId} class="carousel w-full h-full scroll-smooth">
+      {images.map((image, index) => (
+        <div id={`${uniqueId}-slide${index}`} class="carousel-item relative w-full h-full">
+          <img src={image} alt={`${title} - image ${index + 1}`} class="w-full h-full object-cover" />
+        </div> 
+      ))}
+    </div>
+
+    <!-- Fixed buttons overlaid on top of the carousel -->
+    {images.length > 1 && (
+      <div class="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2 pointer-events-none">
+        <button class="btn btn-circle btn-sm pointer-events-auto carousel-prev" data-target={uniqueId}>❮</button> 
+        <button class="btn btn-circle btn-sm pointer-events-auto carousel-next" data-target={uniqueId}>❯</button>
+      </div>
+    )}
   </div>
+  
   <div class="card-body flex flex-col">
     <h2 class="card-title">{title}</h2>
     <div class="text-base-content/80 text-sm flex-grow">
@@ -27,13 +37,38 @@ const uniqueId = `carousel-${Math.random().toString(36).substr(2, 9)}`;
 </div>
 
 <script>
-  document.querySelectorAll('.carousel a').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
+  // Handle moving to the previous slide
+  document.querySelectorAll('.carousel-prev').forEach(btn => {
+    btn.addEventListener('click', function (e) {
       e.preventDefault();
-      const targetId = this.getAttribute('href');
-      const targetElement = document.querySelector(targetId);
-      if (targetElement) {
-        targetElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      const targetId = this.getAttribute('data-target');
+      const carousel = document.getElementById(targetId);
+      
+      if (carousel) {
+        // Wrap around to the end if we're at the beginning
+        if (carousel.scrollLeft <= 10) {
+          carousel.scrollTo({ left: carousel.scrollWidth, behavior: 'smooth' });
+        } else {
+          carousel.scrollBy({ left: -carousel.clientWidth, behavior: 'smooth' });
+        }
+      }
+    });
+  });
+
+  // Handle moving to the next slide
+  document.querySelectorAll('.carousel-next').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('data-target');
+      const carousel = document.getElementById(targetId);
+      
+      if (carousel) {
+        // Wrap around to the beginning if we reached the end
+        if (carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - 10) {
+          carousel.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          carousel.scrollBy({ left: carousel.clientWidth, behavior: 'smooth' });
+        }
       }
     });
   });
